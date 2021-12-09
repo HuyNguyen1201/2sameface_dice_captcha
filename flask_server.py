@@ -5,6 +5,8 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 app = Flask(__name__, template_folder="templates")
 
+
+
 @app.route("/", methods = ['GET'])
 def helloworld():
     return '''<h1>Hotmail Captcha Solver <2 same items in dice></h1>'''
@@ -30,4 +32,4 @@ def shutdown():
     return "Shutting down..."
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

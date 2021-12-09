@@ -11,12 +11,18 @@ from model.yolov5.detect_custom import run as yolo_run
 from tensorflow.keras.models import load_model
 from skimage import transform
 import os
-
-
+import shutil
+from model.yolov5.models.common import DetectMultiBackend
+from model.yolov5.utils.torch_utils import select_device
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 _YOLO_WEIGHT_PATH = "./model/yolov5/runs/train/exp/weights/best.pt"
 _CNN_WEIGHT_PATH = "./model/generated_dataset_no_crop_100_100_4.h5"
+
+device = select_device("")
+yolo_model = DetectMultiBackend(_YOLO_WEIGHT_PATH, device=device, dnn=False)
+# yolo_model = yolo_run()
+cnn_model = load_model(_CNN_WEIGHT_PATH)
 
 def convert_base64(base64_str, path=None):
     # read image
@@ -80,7 +86,7 @@ def run(data):
     file_path,folder_path = convert_base64(base64_str)
     read_split_image(file_path, folder_path)
     # crop dice's face <YOLO>
-    r = yolo_run(weights=_YOLO_WEIGHT_PATH, source=folder_path, imgsz=[100,100], line_thickness=1)
+    r = yolo_run(weights=_YOLO_WEIGHT_PATH,model=yolo_model,  source=folder_path, imgsz=[100,100], line_thickness=1)
     croped_im_path = []
     for result in r:
         bouding_box = result[1]
@@ -97,11 +103,12 @@ def run(data):
         cv2.imwrite(im_path, horizontal_im)
         croped_im_path.append(im_path)
     # predict by CNN
-    model = load_model(_CNN_WEIGHT_PATH)
     result_predict = []
     for path in croped_im_path:
         im = load(path)
-        result  = model.predict(im)
+        result  = cnn_model.predict(im)
         result_predict.append(result)
+        
+    shutil.rmtree(folder_path)
     return result_predict.index(max(result_predict)) + 1
     
